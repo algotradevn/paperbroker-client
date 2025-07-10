@@ -1,25 +1,37 @@
+import uuid
 import quickfix as fix
 from paperbroker.logger import get_logger
+from .OrderManager import OrderManager
 from .handler_logon import LogonHandler
 from .handler_admin import AdminHandler
 from .handler_app import AppHandler
 
 
-class FIXApp(fix.Application):  # ✅ MUST inherit this way
+class FIXApp(fix.Application):
     def __init__(self, account: str, username: str, password: str, logger: str = None):
-        super().__init__()  # ✅ Make sure C++ base initialized
+        super().__init__()
         self.logger = logger or get_logger("fixapp")
+
+        # Handlers
         self.logon_handler = LogonHandler(logger=self.logger)
         self.admin_handler = AdminHandler(
             account=account, username=username, password=password, logger=self.logger
         )
         self.app_handler = AppHandler(logger=self.logger)
 
+        # Order manager
+        self.order_manager = OrderManager(logger=self.logger)
+
+        # FIX session ID
+        self.session_id = None
+
     def onCreate(self, sessionID):
         self.logon_handler.on_create(sessionID)
 
     def onLogon(self, sessionID):
+        self.session_id = sessionID
         self.logon_handler.on_logon(sessionID)
+        self.order_manager.set_session(sessionID)
 
     def onLogout(self, sessionID):
         self.logon_handler.on_logout(sessionID)
@@ -35,3 +47,16 @@ class FIXApp(fix.Application):  # ✅ MUST inherit this way
 
     def fromApp(self, message, sessionID):
         self.app_handler.from_app(message, sessionID)
+        self.order_manager.on_execution_report(message)
+
+    def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
+        return self.order_manager.place_order(symbol, side, qty, price, ord_type, tif)
+
+    def cancel_order(self, ord_id):
+        return self.order_manager.cancel_order(ord_id)
+
+    def get_order_status(self, ord_id):
+        return self.order_manager.get_order_status(ord_id)
+
+    def get_session_id(self):
+        return self.session_id if self.session_id else None

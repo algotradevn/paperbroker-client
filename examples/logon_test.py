@@ -6,5 +6,6 @@ client = PaperBrokerClient(
 )
 client.connect()
 
-while True:
-    time.sleep(2)
+time.sleep(5)
+
+client.disconnect()

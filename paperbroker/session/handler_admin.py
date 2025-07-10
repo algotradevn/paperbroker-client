@@ -11,11 +11,11 @@ class AdminHandler:
     def to_admin(self, message, sessionID):
         msg_type = message.getHeader().getField(fix.MsgType()).getString()
         if msg_type == "A":  # Logon
-            message.setField(fix.Account(self.account))
-            message.setField(fix.Username(self.username))
             message.setField(fix.Password(self.password))
             message.setField(fix.EncryptMethod(0))
             message.setField(fix.HeartBtInt(30))
+        message.setField(fix.Username(self.username))
+        message.setField(fix.Account(self.account))
         self.logger.debug(f"[TO ADMIN] {message}")
 
     def from_admin(self, message, sessionID):
