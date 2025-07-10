@@ -1,6 +1,10 @@
+import time
 from paperbroker import PaperBrokerClient
 
 client = PaperBrokerClient(
-    account="PINETREE", username="PINETREE", password="123", cfg_path="PINETREE.cfg"
+    account="reppg", username="reppg", password="123", cfg_path="test.cfg"
 )
 client.connect()
+
+while True:
+    time.sleep(2)
