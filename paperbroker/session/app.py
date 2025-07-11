@@ -17,7 +17,9 @@ class FIXApp(fix.Application):
         self.admin_handler = AdminHandler(
             account=account, username=username, password=password, logger=self.logger
         )
-        self.app_handler = AppHandler(logger=self.logger)
+        self.app_handler = AppHandler(
+            account=account, username=username, password=password, logger=self.logger
+        )
 
         # Order manager
         self.order_manager = OrderManager(logger=self.logger)
@@ -52,11 +54,11 @@ class FIXApp(fix.Application):
     def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
         return self.order_manager.place_order(symbol, side, qty, price, ord_type, tif)
 
-    def cancel_order(self, ord_id):
-        return self.order_manager.cancel_order(ord_id)
+    def cancel_order(self, cl_ord_id):
+        return self.order_manager.cancel_order(cl_ord_id)
 
-    def get_order_status(self, ord_id):
-        return self.order_manager.get_order_status(ord_id)
+    def get_order_status(self, cl_ord_id):
+        return self.order_manager.get_order_status(cl_ord_id)
 
     def get_session_id(self):
         return self.session_id if self.session_id else None

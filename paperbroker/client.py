@@ -27,11 +27,11 @@ class PaperBrokerClient:
     def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
         return self.session.app.place_order(symbol, side, qty, price, ord_type, tif)
 
-    def cancel_order(self, ord_id):
-        return self.session.app.cancel_order(ord_id)
+    def cancel_order(self, cl_ord_id):
+        return self.session.app.cancel_order(cl_ord_id)
 
-    def get_order_status(self, ord_id):
-        return self.session.app.get_order_status(ord_id)
+    def get_order_status(self, cl_ord_id):
+        return self.session.app.get_order_status(cl_ord_id)
 
     def get_session_id(self):
         return self.session.app.get_session_id()
