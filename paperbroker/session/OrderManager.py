@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import uuid
 import quickfix as fix
 import quickfix44 as fix44
@@ -7,10 +8,10 @@ class OrderManager:
     def __init__(self, logger):
         self.logger = logger
         self.session_id = None
-        self.clord_map = {}  # ord_id -> cl_ord_id
-        self.order_info = {}  # cl_ord_id -> dict (symbol, qty, side, ...)
-        self.status_map = {}  # cl_ord_id -> status
-        self.order_id_map = {}  # cl_ord_id -> ord_id
+        self.clord_map = {}
+        self.order_info = {}
+        self.status_map = {}  # cl_ord_id -> {"status": str, "time": datetime}
+        self.order_id_map = {}
 
     def set_session(self, session_id):
         self.session_id = session_id
@@ -51,7 +52,11 @@ class OrderManager:
             self.logger.error("Failed to send order")
 
         self.order_info[cl_ord_id] = {"symbol": symbol, "side": side, "qty": qty}
-        self.status_map[cl_ord_id] = "PendingNew"
+        self.status_map[cl_ord_id] = {
+            "status": "PendingNew",
+            "time": datetime.now(timezone.utc),
+        }
+
         return cl_ord_id
 
     def cancel_order(self, cl_ord_id):
@@ -67,7 +72,7 @@ class OrderManager:
         cancel = fix44.OrderCancelRequest()
         cancel.setField(fix.OrigClOrdID(cl_ord_id))
         cancel.setField(fix.ClOrdID(cancel_cl_ord_id))
-        cancel.setField(fix.OrderID(ord_id))  # Use original server order ID
+        cancel.setField(fix.OrderID(ord_id))
         cancel.setField(fix.Symbol(info["symbol"]))
         cancel.setField(fix.SecurityExchange("HSX"))
         cancel.setField(
@@ -81,36 +86,54 @@ class OrderManager:
         else:
             self.logger.error("Failed to send cancel request")
 
-        self.status_map[cl_ord_id] = "PendingCancel"
+        self.status_map[cl_ord_id] = {
+            "status": "PendingCancel",
+            "time": datetime.now(timezone.utc),
+        }
 
     def on_execution_report(self, message):
         try:
             cl_ord_id = message.getField(fix.ClOrdID().getTag())
             ord_status = message.getField(fix.OrdStatus().getTag())
             ord_id = message.getField(fix.OrderID().getTag())
+            transact_time_str = message.getField(fix.TransactTime().getTag())
+            transact_time = datetime.strptime(transact_time_str, "%Y%m%d-%H:%M:%S.%f")
+            transact_time = transact_time.replace(tzinfo=timezone.utc)
 
             self.order_id_map[cl_ord_id] = ord_id
-
             if ord_id:
                 self.clord_map[ord_id] = cl_ord_id
 
+            status = self.map_status(ord_status)
+
             if ord_status in ["4", "6"]:
                 orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
-                self.status_map[orig_cl_ord_id] = self.map_status(ord_status)
-                self.logger.debug(
-                    f"[STATUS] Order {orig_cl_ord_id} is now {self.status_map[orig_cl_ord_id]}"
-                )
+                prev = self.status_map.get(orig_cl_ord_id)
+                if prev is None or transact_time > prev["time"]:
+                    self.status_map[orig_cl_ord_id] = {
+                        "status": status,
+                        "time": transact_time,
+                    }
+                    self.logger.debug(
+                        f"[STATUS] Order {orig_cl_ord_id} is now {status} at {transact_time.isoformat()}"
+                    )
             else:
-                self.status_map[cl_ord_id] = self.map_status(ord_status)
-                self.logger.debug(
-                    f"[STATUS] Order {cl_ord_id} is now {self.status_map[cl_ord_id]}"
-                )
+                prev = self.status_map.get(cl_ord_id)
+                if prev is None or transact_time > prev["time"]:
+                    self.status_map[cl_ord_id] = {
+                        "status": status,
+                        "time": transact_time,
+                    }
+                    self.logger.debug(
+                        f"[STATUS] Order {cl_ord_id} is now {status} at {transact_time.isoformat()}"
+                    )
 
         except Exception as e:
             self.logger.error(f"Failed to process execution report: {e}")
 
     def get_order_status(self, cl_ord_id):
-        return self.status_map.get(cl_ord_id, "Unknown")
+        entry = self.status_map.get(cl_ord_id)
+        return entry["status"] if entry else "Unknown"
 
     def map_status(self, fix_status):
         return {
