@@ -2,7 +2,11 @@ from paperbroker import PaperBrokerClient
 import time
 
 client = PaperBrokerClient(
-    account="reppg", username="reppg", password="123", cfg_path="test.cfg"
+    account="reppg",
+    username="reppg",
+    password="123",
+    cfg_path="test.cfg",
+    console=True,
 )
 
 try:

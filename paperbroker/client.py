@@ -1,3 +1,5 @@
+from paperbroker.rest.rest_session import RestSession
+from paperbroker.rest.account_client import AccountClient
 from paperbroker.session.session_manager import FIXSessionManager
 
 
@@ -9,6 +11,8 @@ class PaperBrokerClient:
         password: str,
         cfg_path: str,
         log_dir: str = "logs",
+        rest_base_url: str = "http://localhost:8000",
+        console: bool = False,
     ):
         self.session = FIXSessionManager(
             cfg_path=cfg_path,
@@ -16,7 +20,12 @@ class PaperBrokerClient:
             username=username,
             password=password,
             log_dir=log_dir,
+            console=console,
         )
+
+        # REST clients
+        self.rest_session = RestSession(rest_base_url)
+        self.account_client = AccountClient(self.rest_session)
 
     def connect(self):
         self.session.start()
@@ -24,6 +33,7 @@ class PaperBrokerClient:
     def disconnect(self):
         self.session.stop()
 
+    # FIX
     def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
         return self.session.app.place_order(symbol, side, qty, price, ord_type, tif)
 
@@ -35,3 +45,7 @@ class PaperBrokerClient:
 
     def get_session_id(self):
         return self.session.app.get_session_id()
+
+    # REST
+    def get_account_info(self, account_id: str):
+        return self.account_client.get_account_info(account_id)

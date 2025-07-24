@@ -11,8 +11,9 @@ class FIXSessionManager:
         username: str,
         password: str,
         log_dir: str = "logs",
+        console: bool = False,
     ):
-        self.logger = get_logger("fixsession", log_dir)
+        self.logger = get_logger("fixsession", log_dir, console)
 
         self.settings = fix.SessionSettings(cfg_path)
         self.store_factory = fix.FileStoreFactory(self.settings)

@@ -95,18 +95,51 @@ class OrderManager:
         try:
             cl_ord_id = message.getField(fix.ClOrdID().getTag())
             ord_status = message.getField(fix.OrdStatus().getTag())
+            exec_type = message.getField(fix.ExecType().getTag())
             ord_id = message.getField(fix.OrderID().getTag())
             transact_time_str = message.getField(fix.TransactTime().getTag())
-            transact_time = datetime.strptime(transact_time_str, "%Y%m%d-%H:%M:%S.%f")
-            transact_time = transact_time.replace(tzinfo=timezone.utc)
+            transact_time = datetime.strptime(
+                transact_time_str, "%Y%m%d-%H:%M:%S.%f"
+            ).replace(tzinfo=timezone.utc)
 
+            # Map OrderID <-> ClOrdID
             self.order_id_map[cl_ord_id] = ord_id
             if ord_id:
                 self.clord_map[ord_id] = cl_ord_id
 
             status = self.map_status(ord_status)
 
-            if ord_status in ["4", "6"]:
+            if exec_type == fix.ExecType_REJECTED:
+                text = (
+                    message.getField(fix.Text().getTag())
+                    if message.isSetField(fix.Text().getTag())
+                    else "No reason"
+                )
+                self.logger.warning(
+                    f"[REJECTED] Order {cl_ord_id} was rejected: {text}"
+                )
+            elif exec_type == fix.ExecType_TRADE:
+                last_px = float(message.getField(fix.LastPx().getTag()))
+                last_qty = float(message.getField(fix.LastQty().getTag()))
+                self.logger.info(
+                    f"[TRADE] {cl_ord_id}: Traded {last_qty} @ {last_px} at {transact_time.isoformat()}"
+                )
+            elif exec_type == fix.ExecType_PENDING_CANCEL:
+                orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
+                self.logger.debug(
+                    f"[PENDING_CANCEL] {orig_cl_ord_id} pending cancel at {transact_time.isoformat()}"
+                )
+            elif exec_type == fix.ExecType_CANCELED:
+                orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
+                self.logger.info(
+                    f"[CANCELED] {orig_cl_ord_id} was canceled at {transact_time.isoformat()}"
+                )
+            elif exec_type == fix.ExecType_NEW:
+                self.logger.info(
+                    f"[NEW] Order {cl_ord_id} accepted at {transact_time.isoformat()}"
+                )
+
+            if ord_status in ["4", "6"]:  # Canceled or PendingCancel
                 orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
                 prev = self.status_map.get(orig_cl_ord_id)
                 if prev is None or transact_time > prev["time"]:
@@ -114,9 +147,6 @@ class OrderManager:
                         "status": status,
                         "time": transact_time,
                     }
-                    self.logger.debug(
-                        f"[STATUS] Order {orig_cl_ord_id} is now {status} at {transact_time.isoformat()}"
-                    )
             else:
                 prev = self.status_map.get(cl_ord_id)
                 if prev is None or transact_time > prev["time"]:
@@ -124,9 +154,6 @@ class OrderManager:
                         "status": status,
                         "time": transact_time,
                     }
-                    self.logger.debug(
-                        f"[STATUS] Order {cl_ord_id} is now {status} at {transact_time.isoformat()}"
-                    )
 
         except Exception as e:
             self.logger.error(f"Failed to process execution report: {e}")

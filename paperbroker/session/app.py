@@ -8,9 +8,16 @@ from .handler_app import AppHandler
 
 
 class FIXApp(fix.Application):
-    def __init__(self, account: str, username: str, password: str, logger: str = None):
+    def __init__(
+        self,
+        account: str,
+        username: str,
+        password: str,
+        logger: str = None,
+        console: bool = False,
+    ):
         super().__init__()
-        self.logger = logger or get_logger("fixapp")
+        self.logger = logger or get_logger("fixapp", console=console)
 
         # Handlers
         self.logon_handler = LogonHandler(logger=self.logger)
