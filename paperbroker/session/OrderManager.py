@@ -19,7 +19,15 @@ class OrderManager:
     def generate_ord_id(self):
         return str(uuid.uuid4())[:8]
 
-    def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
+    def place_order(
+        self,
+        symbol,
+        side,
+        qty,
+        price,
+        ord_type="LIMIT",
+        tif="GTC",
+    ):
         if not self.session_id:
             raise RuntimeError("FIX session is not established.")
 

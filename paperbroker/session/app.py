@@ -1,5 +1,5 @@
-import uuid
 import quickfix as fix
+from typing import Optional
 from paperbroker.logger import get_logger
 from .OrderManager import OrderManager
 from .handler_logon import LogonHandler
@@ -13,7 +13,7 @@ class FIXApp(fix.Application):
         account: str,
         username: str,
         password: str,
-        logger: str = None,
+        logger: Optional[str] = None,
         console: bool = False,
     ):
         super().__init__()
@@ -64,8 +64,23 @@ class FIXApp(fix.Application):
         self.app_handler.from_app(message, sessionID)
         self.order_manager.on_execution_report(message)
 
-    def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
-        return self.order_manager.place_order(symbol, side, qty, price, ord_type, tif)
+    def place_order(
+        self,
+        symbol,
+        side,
+        qty,
+        price,
+        ord_type="LIMIT",
+        tif="GTC",
+    ):
+        return self.order_manager.place_order(
+            symbol=symbol,
+            side=side,
+            qty=qty,
+            price=price,
+            ord_type=ord_type,
+            tif=tif,
+        )
 
     def cancel_order(self, cl_ord_id):
         return self.order_manager.cancel_order(cl_ord_id)

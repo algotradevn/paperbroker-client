@@ -16,8 +16,6 @@ client = PaperBrokerClient(
     rest_base_url=os.getenv("rest_base_url", "http://localhost:9090"),
 )
 
-ID = "9d2a"
-
 try:
     client.connect()
 
@@ -27,7 +25,7 @@ try:
         time.sleep(0.2)
 
     # Step 0: Fetch initial account info before placing order
-    account_info = client.get_account_info(ID)
+    account_info = client.get_account_info()
     print("[STEP 0] Account Info (before order):", account_info)
 
     # Step 1: Place a BUY limit order
@@ -41,7 +39,7 @@ try:
     print(f"[STEP 2] Order status: {status}")
 
     # Step 2b: Fetch account info after placing order
-    account_info = client.get_account_info(ID)
+    account_info = client.get_account_info()
     print("[STEP 2b] Account Info (after order placed):", account_info)
 
     time.sleep(2)
@@ -57,7 +55,7 @@ try:
     print(f"[STEP 4] Final status: {status}")
 
     # Step 4b: Fetch account info after cancellation
-    account_info = client.get_account_info(ID)
+    account_info = client.get_account_info()
     print("[STEP 4b] Account Info (after cancel):", account_info)
 
 finally:

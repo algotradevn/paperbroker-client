@@ -27,6 +27,7 @@ class PaperBrokerClient:
         self.rest_session = RestSession(rest_base_url)
         self.account_client = AccountClient(
             rest_session=self.rest_session,
+            username=username,
             log_dir=log_dir,
             console=console,
         )
@@ -38,8 +39,23 @@ class PaperBrokerClient:
         self.session.stop()
 
     # FIX
-    def place_order(self, symbol, side, qty, price, ord_type="LIMIT", tif="GTC"):
-        return self.session.app.place_order(symbol, side, qty, price, ord_type, tif)
+    def place_order(
+        self,
+        symbol,
+        side,
+        qty,
+        price,
+        ord_type="LIMIT",
+        tif="GTC",
+    ):
+        return self.session.app.place_order(
+            symbol=symbol,
+            side=side,
+            qty=qty,
+            price=price,
+            ord_type=ord_type,
+            tif=tif,
+        )
 
     def cancel_order(self, cl_ord_id):
         return self.session.app.cancel_order(cl_ord_id)
@@ -51,5 +67,5 @@ class PaperBrokerClient:
         return self.session.app.get_session_id()
 
     # REST
-    def get_account_info(self, account_id: str):
-        return self.account_client.get_account_info(account_id)
+    def get_account_info(self):
+        return self.account_client.get_account_info()
