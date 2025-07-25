@@ -17,15 +17,21 @@ class FIXApp(fix.Application):
         console: bool = False,
     ):
         super().__init__()
-        self.logger = logger or get_logger("fixapp", console=console)
+        self.logger = logger or get_logger(console=console)
 
         # Handlers
         self.logon_handler = LogonHandler(logger=self.logger)
         self.admin_handler = AdminHandler(
-            account=account, username=username, password=password, logger=self.logger
+            account=account,
+            username=username,
+            password=password,
+            logger=self.logger,
         )
         self.app_handler = AppHandler(
-            account=account, username=username, password=password, logger=self.logger
+            account=account,
+            username=username,
+            password=password,
+            logger=self.logger,
         )
 
         # Order manager

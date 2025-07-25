@@ -10,13 +10,13 @@ class FixFormatter(logging.Formatter):
         return super().format(record)
 
 
-def get_logger(
-    name: str, log_dir: str = "logs", console: bool = True
-) -> logging.Logger:
+def get_logger(log_dir: str = "logs", console: bool = True) -> logging.Logger:
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{name}_{datetime.now().strftime('%Y%m%d')}.log")
+    log_file = os.path.join(
+        log_dir, f"paperbroker_{datetime.now().strftime('%Y%m%d')}.log"
+    )
 
-    logger = logging.getLogger(name)
+    logger = logging.getLogger("paperbroker")
     logger.setLevel(logging.DEBUG)
 
     # Prevent adding multiple handlers when reused

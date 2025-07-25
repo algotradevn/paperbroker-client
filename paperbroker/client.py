@@ -25,7 +25,11 @@ class PaperBrokerClient:
 
         # REST clients
         self.rest_session = RestSession(rest_base_url)
-        self.account_client = AccountClient(self.rest_session)
+        self.account_client = AccountClient(
+            rest_session=self.rest_session,
+            log_dir=log_dir,
+            console=console,
+        )
 
     def connect(self):
         self.session.start()
