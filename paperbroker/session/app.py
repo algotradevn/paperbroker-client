@@ -66,7 +66,7 @@ class FIXApp(fix.Application):
 
     def place_order(
         self,
-        symbol,
+        full_symbol,
         side,
         qty,
         price,
@@ -74,7 +74,7 @@ class FIXApp(fix.Application):
         tif="GTC",
     ):
         return self.order_manager.place_order(
-            symbol=symbol,
+            full_symbol=full_symbol,
             side=side,
             qty=qty,
             price=price,

@@ -41,7 +41,7 @@ class PaperBrokerClient:
     # FIX
     def place_order(
         self,
-        symbol,
+        full_symbol,
         side,
         qty,
         price,
@@ -49,7 +49,7 @@ class PaperBrokerClient:
         tif="GTC",
     ):
         return self.session.app.place_order(
-            symbol=symbol,
+            full_symbol=full_symbol,
             side=side,
             qty=qty,
             price=price,

@@ -21,7 +21,7 @@ try:
         print("[WAITING] Waiting for FIX logon...")
         time.sleep(0.2)
 
-    cl_ord_id = client.place_order("MWG", "BUY", qty=100, price=74500)
+    cl_ord_id = client.place_order("HNXDS:VN30F2508", "BUY", qty=1, price=1650)
     print(f"[STEP 1] Placed order: {cl_ord_id}")
 
     time.sleep(2)
