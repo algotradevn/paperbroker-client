@@ -1,0 +1,14 @@
+build==1.2.2.post1
+certifi==2025.7.9
+charset-normalizer==3.4.2
+idna==3.10
+packaging==25.0
+-e git+ssh://git@github.com-algotrade/algotradevn/paperbroker-client.git@c8371cd80f9ac7f70b9aef6fe048fd33fa4bae69#egg=paperbroker_client
+pyproject_hooks==1.2.0
+python-dotenv==1.1.1
+quickfix==1.15.1
+requests==2.32.4
+tomli==2.2.1
+types-setuptools==80.9.0.20250529
+urllib3==2.5.0
+-e git+ssh://git@github.com-algotrade/algotradevn/paperbroker-client.git@c8371cd80f9ac7f70b9aef6fe048fd33fa4bae69#egg=your_package_name
