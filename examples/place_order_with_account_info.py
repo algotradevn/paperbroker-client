@@ -12,7 +12,7 @@ client = PaperBrokerClient(
     username=os.getenv("username", "default_username"),
     password=os.getenv("password", "default_password"),
     cfg_path=os.getenv("cfg_path", "default.cfg"),
-    console=True,
+    console=False,
     rest_base_url=os.getenv("rest_base_url", "http://localhost:9090"),
 )
 
@@ -29,7 +29,7 @@ try:
     print("[STEP 0] Account Info (before order):", account_info)
 
     # Step 1: Place a BUY limit order
-    cl_ord_id = client.place_order("MWG", "BUY", qty=100, price=74500)
+    cl_ord_id = client.place_order("HNXDS:VN30F2508", "BUY", qty=1, price=1620)
     print(f"[STEP 1] Placed order: {cl_ord_id}")
 
     time.sleep(2)

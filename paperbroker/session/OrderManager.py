@@ -18,10 +18,19 @@ class OrderManager:
 
     def generate_ord_id(self):
         return str(uuid.uuid4())[:8]
+    
+    def extract_exchange_and_symbol(self, full_symbol: str):
+        """
+        Converts 'HSX:MWG' -> ('HSX', 'MWG')
+        """
+        if ":" not in full_symbol:
+            raise ValueError(f"Invalid symbol format: {full_symbol}, expected EXCHANGE:SYMBOL")
+        exchange, symbol = full_symbol.split(":", 1)
+        return exchange, symbol
 
     def place_order(
         self,
-        symbol,
+        full_symbol,
         side,
         qty,
         price,
@@ -31,12 +40,13 @@ class OrderManager:
         if not self.session_id:
             raise RuntimeError("FIX session is not established.")
 
+        exchange, symbol = self.extract_exchange_and_symbol(full_symbol)
         cl_ord_id = self.generate_ord_id()
 
         order = fix44.NewOrderSingle()
         order.setField(fix.ClOrdID(cl_ord_id))
-        order.setField(fix.Symbol(symbol))
-        order.setField(fix.SecurityExchange("HSX"))
+        order.setField(fix.Symbol(symbol))  # Keep full symbol for consistency
+        order.setField(fix.SecurityExchange(exchange))
         order.setField(fix.Side(fix.Side_BUY if side == "BUY" else fix.Side_SELL))
         order.setField(fix.OrderQty(qty))
         order.setField(fix.Price(price))
@@ -59,7 +69,12 @@ class OrderManager:
         else:
             self.logger.error("Failed to send order")
 
-        self.order_info[cl_ord_id] = {"symbol": symbol, "side": side, "qty": qty}
+        self.order_info[cl_ord_id] = {
+            "symbol": symbol,
+            "side": side,
+            "qty": qty,
+            "exchange": exchange,
+        }
         self.status_map[cl_ord_id] = {
             "status": "PendingNew",
             "time": datetime.now(timezone.utc),
@@ -82,7 +97,7 @@ class OrderManager:
         cancel.setField(fix.ClOrdID(cancel_cl_ord_id))
         cancel.setField(fix.OrderID(ord_id))
         cancel.setField(fix.Symbol(info["symbol"]))
-        cancel.setField(fix.SecurityExchange("HSX"))
+        cancel.setField(fix.SecurityExchange(info.get("exchange", "")))  # fallback empty if missing
         cancel.setField(
             fix.Side(fix.Side_BUY if info["side"] == "BUY" else fix.Side_SELL)
         )
@@ -101,6 +116,17 @@ class OrderManager:
 
     def on_execution_report(self, message):
         try:
+            msg_type = message.getHeader().getField(fix.MsgType().getTag())
+            if msg_type == fix.MsgType_OrderCancelReject:
+                cl_ord_id = message.getField(fix.ClOrdID().getTag())
+                order_id = message.getField(fix.OrderID().getTag()) if message.isSetField(fix.OrderID().getTag()) else "?"
+                text = message.getField(fix.Text().getTag()) if message.isSetField(fix.Text().getTag()) else "Unknown reason"
+                rej_reason = message.getField(fix.CxlRejReason().getTag()) if message.isSetField(fix.CxlRejReason().getTag()) else "?"
+                self.logger.warning(
+                    f"[CANCEL_REJECTED] Cancel for {cl_ord_id} (orderID={order_id}) was rejected (reason={rej_reason}): {text}"
+                )
+                return
+
             cl_ord_id = message.getField(fix.ClOrdID().getTag())
             ord_status = message.getField(fix.OrdStatus().getTag())
             exec_type = message.getField(fix.ExecType().getTag())
@@ -110,7 +136,6 @@ class OrderManager:
                 transact_time_str, "%Y%m%d-%H:%M:%S.%f"
             ).replace(tzinfo=timezone.utc)
 
-            # Map OrderID <-> ClOrdID
             self.order_id_map[cl_ord_id] = ord_id
             if ord_id:
                 self.clord_map[ord_id] = cl_ord_id
@@ -147,14 +172,15 @@ class OrderManager:
                     f"[NEW] Order {cl_ord_id} accepted at {transact_time.isoformat()}"
                 )
 
-            if ord_status in ["4", "6"]:  # Canceled or PendingCancel
-                orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
-                prev = self.status_map.get(orig_cl_ord_id)
-                if prev is None or transact_time > prev["time"]:
-                    self.status_map[orig_cl_ord_id] = {
-                        "status": status,
-                        "time": transact_time,
-                    }
+            if ord_status in ["4", "6"]:
+                if message.isSetField(fix.OrigClOrdID().getTag()):
+                    orig_cl_ord_id = message.getField(fix.OrigClOrdID().getTag())
+                    prev = self.status_map.get(orig_cl_ord_id)
+                    if prev is None or transact_time > prev["time"]:
+                        self.status_map[orig_cl_ord_id] = {
+                            "status": status,
+                            "time": transact_time,
+                        }
             else:
                 prev = self.status_map.get(cl_ord_id)
                 if prev is None or transact_time > prev["time"]:
@@ -165,6 +191,7 @@ class OrderManager:
 
         except Exception as e:
             self.logger.error(f"Failed to process execution report: {e}")
+
 
     def get_order_status(self, cl_ord_id):
         entry = self.status_map.get(cl_ord_id)
