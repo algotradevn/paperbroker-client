@@ -67,5 +67,11 @@ class PaperBrokerClient:
         return self.session.app.get_session_id()
 
     # REST
-    def get_account_info(self):
-        return self.account_client.get_account_info()
+    def get_remain_balance(self):
+        return self.account_client.get_remain_balance()
+
+    def get_stock_orders(self):
+        return self.account_client.get_stock_orders()
+
+    def get_derivative_orders(self):
+        return self.account_client.get_derivative_orders()

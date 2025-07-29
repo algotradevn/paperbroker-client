@@ -12,7 +12,7 @@ client = PaperBrokerClient(
     username=os.getenv("username", "default_username"),
     password=os.getenv("password", "default_password"),
     cfg_path=os.getenv("cfg_path", "default.cfg"),
-    console=False,
+    console=True,
     rest_base_url=os.getenv("rest_base_url", "http://localhost:9090"),
 )
 
@@ -24,12 +24,12 @@ try:
         print("[WAITING] Waiting for FIX logon...")
         time.sleep(0.2)
 
-    # Step 0: Fetch initial account info before placing order
-    account_info = client.get_account_info()
-    print("[STEP 0] Account Info (before order):", account_info)
+    # Step 0: Fetch initial remain balance before placing order
+    remain_balance = client.get_remain_balance()
+    print("[STEP 0] Remain Balance (before order):", remain_balance)
 
     # Step 1: Place a BUY limit order
-    cl_ord_id = client.place_order("HNXDS:VN30F2508", "BUY", qty=1, price=1620)
+    cl_ord_id = client.place_order("HSX:VN30F2508", "BUY", qty=1, price=1620)
     print(f"[STEP 1] Placed order: {cl_ord_id}")
 
     time.sleep(2)
@@ -38,9 +38,9 @@ try:
     status = client.get_order_status(cl_ord_id)
     print(f"[STEP 2] Order status: {status}")
 
-    # Step 2b: Fetch account info after placing order
-    account_info = client.get_account_info()
-    print("[STEP 2b] Account Info (after order placed):", account_info)
+    # Step 2b: Fetch remain balance after placing order
+    remain_balance = client.get_remain_balance()
+    print("[STEP 2b] Remain Balance (after order placed):", remain_balance)
 
     time.sleep(2)
 
@@ -54,9 +54,9 @@ try:
     status = client.get_order_status(cl_ord_id)
     print(f"[STEP 4] Final status: {status}")
 
-    # Step 4b: Fetch account info after cancellation
-    account_info = client.get_account_info()
-    print("[STEP 4b] Account Info (after cancel):", account_info)
+    # Step 4b: Fetch remain balance after cancellation
+    remain_balance = client.get_remain_balance()
+    print("[STEP 4b] Remain Balance (after cancel):", remain_balance)
 
 finally:
     # Always disconnect the FIX session properly
