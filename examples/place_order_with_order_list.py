@@ -28,6 +28,7 @@ try:
     # === STOCK ORDER ===
     print("\n=== STOCK ORDER FLOW ===")
     print("[STEP 0] Remain Balance:", client.get_remain_balance())
+    print("[STEP 0] Total Balance:", client.get_total_balance())
 
     cl_ord_id_stock = client.place_order("HSX:MWG", "BUY", qty=10, price=60000)
     print(f"[STEP 1] Placed STOCK order: {cl_ord_id_stock}")
@@ -49,6 +50,7 @@ try:
     # === DERIVATIVE ORDER ===
     print("\n=== DERIVATIVE ORDER FLOW ===")
     print("[STEP 0] Remain Balance:", client.get_remain_balance())
+    print("[STEP 0] Total Balance:", client.get_total_balance())
 
     cl_ord_id_der = client.place_order("HNXDS:VN30F2508", "SELL", qty=1, price=1620)
     print(f"[STEP 1] Placed DERIVATIVE order: {cl_ord_id_der}")
