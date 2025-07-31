@@ -34,6 +34,8 @@ class PaperBrokerClient:
 
     def connect(self):
         self.session.start()
+        # Resolve accountID immediately on connect
+        self.account_client.resolve_on_connect()
 
     def disconnect(self):
         self.session.stop()
@@ -67,5 +69,27 @@ class PaperBrokerClient:
         return self.session.app.get_session_id()
 
     # REST
-    def get_account_info(self):
-        return self.account_client.get_account_info()
+    def get_remain_balance(self):
+        return self.account_client.get_remain_balance()
+
+    def get_total_balance(self):
+        return self.account_client.get_total_balance()
+
+    def get_stock_orders(self):
+        return self.account_client.get_stock_orders()
+
+    def get_derivative_orders(self):
+        return self.account_client.get_derivative_orders()
+
+    def get_portfolio(self):
+        return self.account_client.get_portfolio()
+
+    def get_transactions(self):
+        return self.account_client.get_transactions()
+
+    def get_executions_by_order(self, cl_ord_id):
+        order_id = self.session.app.order_manager.order_id_map[cl_ord_id]
+        return self.account_client.get_executions_by_order(order_id)
+
+    def get_executions_by_account(self):
+        return self.account_client.get_executions_by_account()
