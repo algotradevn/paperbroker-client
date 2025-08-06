@@ -59,8 +59,8 @@ class PaperBrokerClient:
             tif=tif,
         )
 
-    def cancel_order(self, cl_ord_id):
-        return self.session.app.cancel_order(cl_ord_id)
+    def cancel_order(self, cl_ord_id, timeout=2.0):
+        return self.session.app.cancel_order(cl_ord_id=cl_ord_id, timeout=timeout)
 
     def get_order_status(self, cl_ord_id):
         return self.session.app.get_order_status(cl_ord_id)

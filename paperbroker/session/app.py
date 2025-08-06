@@ -82,8 +82,8 @@ class FIXApp(fix.Application):
             tif=tif,
         )
 
-    def cancel_order(self, cl_ord_id):
-        return self.order_manager.cancel_order(cl_ord_id)
+    def cancel_order(self, cl_ord_id, timeout=2.0):
+        return self.order_manager.cancel_order(cl_ord_id=cl_ord_id, timeout=timeout)
 
     def get_order_status(self, cl_ord_id):
         return self.order_manager.get_order_status(cl_ord_id)
