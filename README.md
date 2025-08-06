@@ -343,3 +343,15 @@ A full quote message looks like this:
 
 ---
 
+## 📘 Tutorials
+
+Looking for a **step‑by‑step guide** on how to:
+
+* Create environments
+* Create FIX accounts
+* Work with **replay** or **real‑time (kafka)** environments using Swagger
+
+👉 See the full tutorial here:
+[`Tutorial/README.md`](./Tutorial/README.md)
+
+---
