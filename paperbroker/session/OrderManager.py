@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import time
 import uuid
 import quickfix as fix
 import quickfix44 as fix44
@@ -18,13 +19,15 @@ class OrderManager:
 
     def generate_ord_id(self):
         return str(uuid.uuid4())[:8]
-    
+
     def extract_exchange_and_symbol(self, full_symbol: str):
         """
         Converts 'HSX:MWG' -> ('HSX', 'MWG')
         """
         if ":" not in full_symbol:
-            raise ValueError(f"Invalid symbol format: {full_symbol}, expected EXCHANGE:SYMBOL")
+            raise ValueError(
+                f"Invalid symbol format: {full_symbol}, expected EXCHANGE:SYMBOL"
+            )
         exchange, symbol = full_symbol.split(":", 1)
         return exchange, symbol
 
@@ -42,6 +45,8 @@ class OrderManager:
 
         exchange, symbol = self.extract_exchange_and_symbol(full_symbol)
         cl_ord_id = self.generate_ord_id()
+
+        side = side.upper()
 
         order = fix44.NewOrderSingle()
         order.setField(fix.ClOrdID(cl_ord_id))
@@ -82,9 +87,12 @@ class OrderManager:
 
         return cl_ord_id
 
-    def cancel_order(self, cl_ord_id):
-        if cl_ord_id not in self.order_id_map:
-            raise Exception(f"Unknown cl_ord_id: {cl_ord_id}")
+    def cancel_order(self, cl_ord_id, timeout=2.0):
+        start = datetime.now()
+        while cl_ord_id not in self.order_id_map:
+            if (datetime.now() - start).total_seconds() > timeout:
+                raise Exception(f"Timeout waiting for OrderID for {cl_ord_id}")
+        time.sleep(0.05)  # small wait
         if not self.session_id:
             raise RuntimeError("FIX session is not established.")
 
@@ -97,7 +105,9 @@ class OrderManager:
         cancel.setField(fix.ClOrdID(cancel_cl_ord_id))
         cancel.setField(fix.OrderID(ord_id))
         cancel.setField(fix.Symbol(info["symbol"]))
-        cancel.setField(fix.SecurityExchange(info.get("exchange", "")))  # fallback empty if missing
+        cancel.setField(
+            fix.SecurityExchange(info.get("exchange", ""))
+        )  # fallback empty if missing
         cancel.setField(
             fix.Side(fix.Side_BUY if info["side"] == "BUY" else fix.Side_SELL)
         )
@@ -119,9 +129,21 @@ class OrderManager:
             msg_type = message.getHeader().getField(fix.MsgType().getTag())
             if msg_type == fix.MsgType_OrderCancelReject:
                 cl_ord_id = message.getField(fix.ClOrdID().getTag())
-                order_id = message.getField(fix.OrderID().getTag()) if message.isSetField(fix.OrderID().getTag()) else "?"
-                text = message.getField(fix.Text().getTag()) if message.isSetField(fix.Text().getTag()) else "Unknown reason"
-                rej_reason = message.getField(fix.CxlRejReason().getTag()) if message.isSetField(fix.CxlRejReason().getTag()) else "?"
+                order_id = (
+                    message.getField(fix.OrderID().getTag())
+                    if message.isSetField(fix.OrderID().getTag())
+                    else "?"
+                )
+                text = (
+                    message.getField(fix.Text().getTag())
+                    if message.isSetField(fix.Text().getTag())
+                    else "Unknown reason"
+                )
+                rej_reason = (
+                    message.getField(fix.CxlRejReason().getTag())
+                    if message.isSetField(fix.CxlRejReason().getTag())
+                    else "?"
+                )
                 self.logger.warning(
                     f"[CANCEL_REJECTED] Cancel for {cl_ord_id} (orderID={order_id}) was rejected (reason={rej_reason}): {text}"
                 )
@@ -191,7 +213,6 @@ class OrderManager:
 
         except Exception as e:
             self.logger.error(f"Failed to process execution report: {e}")
-
 
     def get_order_status(self, cl_ord_id):
         entry = self.status_map.get(cl_ord_id)
