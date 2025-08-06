@@ -257,3 +257,89 @@ client.get_executions_by_account(account_id)
 ```
 
 ---
+
+### 7. Quotes via Kafka
+
+Paper Broker also streams **real-time market data** through Kafka topics.
+Example: retrieving the **latest matched price** for an instrument:
+
+```python
+import os
+import json
+import time
+from kafka import KafkaConsumer
+
+TOPIC_NAME = "kafka.HNXDS.VN30F2508"
+GROUP_ID = f"plutus-{int(time.time())}"
+
+kafka = KafkaConsumer(
+    TOPIC_NAME,
+    bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092").split(","),
+    security_protocol="SASL_PLAINTEXT",
+    sasl_mechanism="PLAIN",
+    sasl_plain_username=os.getenv("KAFKA_USERNAME", "your-username"),
+    sasl_plain_password=os.getenv("KAFKA_PASSWORD", "your-password"),
+    group_id=GROUP_ID,
+    value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+    auto_offset_reset="latest",
+    enable_auto_commit=True,
+)
+
+def get_latest_matched_price(timeout=1):
+    msg_pack = kafka.poll(timeout_ms=timeout * 1000, max_records=10)
+    for messages in msg_pack.values():
+        for msg in reversed(messages):
+            return (
+                msg.value.get("quote_entries", {})
+                .get("latest_matched_price", {})
+                .get("value")
+            )
+    return None
+
+print("Latest matched price:", get_latest_matched_price())
+```
+
+---
+
+### Quote Structure
+
+A full quote message looks like this:
+
+```json
+{
+  "instrument": "HSX:MWG",
+  "quote_entries": {
+    "latest_matched_price": {
+      "instrument": "HSX:MWG",
+      "quote_type": "latest_matched_price",
+      "value": 56500,
+      "source": "X2",
+      "last_updated_str": "15/04/2025 10:21:14",
+      "last_updated": 1744687274
+    },
+    "latest_matched_quantity": {
+      "instrument": "HSX:MWG",
+      "quote_type": "latest_matched_quantity",
+      "value": 800,
+      "source": "X2",
+      "last_updated_str": "15/04/2025 10:21:35",
+      "last_updated": 1744687295
+    },
+    "ref_price": { "...": "..." },
+    "open_price": { "...": "..." },
+    "ceiling_price": { "...": "..." },
+    "floor_price": { "...": "..." },
+    "bid_price_1": { "...": "..." },
+    "ask_price_1": { "...": "..." },
+    "...": "more entries"
+  },
+  "hidden_system_status": "{\"Open\":56000,\"Close\":56500,...}",
+  "datetime_str": "15/04/2025 10:21:53",
+  "timestamp": 1744687313
+}
+```
+
+👉 The `quote_entries` map contains many different fields, such as reference price (`ref_price`), open/close prices (`open_price`, `close_price`), ceiling/floor limits (`ceiling_price`, `floor_price`), bid/ask ladders (`bid_price_1…10`, `ask_price_1…10`), matched quantities (`latest_matched_quantity`, `total_matched_quantity`), average price (`average_price`), foreign room (`foreign_room`), and more.
+
+---
+
