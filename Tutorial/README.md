@@ -26,6 +26,7 @@ The system is structured around a **Trader → Environment → FIX Account** hie
   * FIX accounts are used by clients (bots, users) to connect and trade.
 
 ℹ️ **Tip:** You can try all APIs directly in **Swagger UI** (usually at `/swagger-ui.html` or `/swagger-ui/index.html`) without needing to craft raw HTTP requests.
+⚠️ **Note:** If you encounter unexpected errors, it is often simpler to create a **new environment and FIX account** instead of reusing broken ones.
 
 ---
 
@@ -129,6 +130,24 @@ Clients do not need to specify symbols — they are pre-configured in the system
 * Replay runs **continuously across sessions and trading days** with no long pauses.
   Minor delays may occur while loading data.
 * All of this can be tested conveniently using **Swagger UI**.
+
+📌 **Note on Price Hub topics:**
+
+* In **`realtime-kafka`** mode, the topic structure is:
+
+  ```
+  kafka.<EXCHANGE>.<SYMBOL>
+  ```
+
+  **Example:** `kafka.HNXDS.VN30F2508`
+
+* In **replay environments**, the topic structure is:
+
+  ```
+  <ENV_ID>.<EXCHANGE>.<SYMBOL>
+  ```
+
+  **Example:** `plutu-r12345.HNXDS.VN30F2508`
 
 ---
 
