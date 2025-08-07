@@ -330,3 +330,108 @@ class AccountClient:
                 extra={"accountID": self.ID, "error": str(e)},
             )
             return []
+
+    def get_nav_history(self) -> list[dict]:
+        """Fetch full NAV (Net Asset Value) time series for the current account."""
+        if not self._ensure_account_id():
+            self.logger.warning(
+                "event=nav_skipped_due_to_missing_id",
+                extra={"username": self.username},
+            )
+            return []
+
+        try:
+            response = self.rest.get(
+                "/api/account/metric/nav",
+                params={"accountID": self.ID},
+            )
+            if isinstance(response, list):
+                self.logger.info(
+                    "event=nav_history_resolved",
+                    extra={"accountID": self.ID, "points": len(response)},
+                )
+                return response
+            else:
+                self.logger.warning(
+                    "event=nav_invalid_format",
+                    extra={"accountID": self.ID, "response": str(response)},
+                )
+                return []
+        except Exception as e:
+            self.logger.error(
+                "event=nav_fetch_failed",
+                extra={"accountID": self.ID, "error": str(e)},
+            )
+            return []
+
+    def get_max_drawdown(self) -> dict:
+        """Fetch Max Drawdown (MDD) statistics for the current account."""
+        if not self._ensure_account_id():
+            self.logger.warning(
+                "event=mdd_skipped_due_to_missing_id",
+                extra={"username": self.username},
+            )
+            return {}
+
+        try:
+            response = self.rest.get(
+                "/api/account/metric/mdd",
+                params={"accountID": self.ID},
+            )
+            if isinstance(response, dict) and "maxDrawdownPct" in response:
+                self.logger.info(
+                    "event=mdd_resolved",
+                    extra={
+                        "accountID": response.get("accountID", self.ID),
+                        "maxDrawdownPct": response["maxDrawdownPct"],
+                    },
+                )
+                return {
+                    "accountID": response.get("accountID", self.ID),
+                    "maxDrawdownPct": response["maxDrawdownPct"],
+                }
+            else:
+                self.logger.warning(
+                    "event=mdd_invalid_format",
+                    extra={"accountID": self.ID, "response": str(response)},
+                )
+                return {}
+        except Exception as e:
+            self.logger.error(
+                "event=mdd_fetch_failed",
+                extra={"accountID": self.ID, "error": str(e)},
+            )
+            return {}
+
+    def get_drawdown_periods(self) -> list[dict]:
+        """Fetch all drawdown periods for the current account."""
+        if not self._ensure_account_id():
+            self.logger.warning(
+                "event=drawdown_periods_skipped_due_to_missing_id",
+                extra={"username": self.username},
+            )
+            return []
+
+        try:
+            response = self.rest.get(
+                "/api/account/metric/drawdowns",
+                params={"accountID": self.ID},
+            )
+            if isinstance(response, list):
+                self.logger.info(
+                    "event=drawdown_periods_resolved",
+                    extra={"accountID": self.ID, "count": len(response)},
+                )
+                return response
+            else:
+                self.logger.warning(
+                    "event=drawdown_periods_invalid_format",
+                    extra={"accountID": self.ID, "response": str(response)},
+                )
+                return []
+        except Exception as e:
+            self.logger.error(
+                "event=drawdown_periods_fetch_failed",
+                extra={"accountID": self.ID, "error": str(e)},
+            )
+            return []

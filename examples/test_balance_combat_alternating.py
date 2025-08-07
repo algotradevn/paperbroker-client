@@ -110,6 +110,24 @@ try:
     expected_fee_loss = total_trades * FEE_PER_TRADE
     print(f"[CHECK] Expected fee loss ≈ {expected_fee_loss}")
 
+    # --- NAV & Drawdown metrics ---
+    print("\n=== NAV HISTORY ===")
+    nav_history = combat.get_nav_history()
+    for point in nav_history[-5:]:
+        print(f"{point['timestamp']} : {point['value']:.2f}")
+
+    print("\n=== MAX DRAWDOWN ===")
+    mdd = combat.get_max_drawdown()
+    print(f"[COMBAT] Max Drawdown: {mdd.get('maxDrawdownPct', 0):.9f}")
+
+    print("\n=== DRAWDOWN PERIODS ===")
+    drawdowns = combat.get_drawdown_periods()
+    for d in drawdowns:
+        print(
+            f"- {d['drawdownPct']:.9f} from {d['peakTime']} ({d['peakValue']}) "
+            f"→ {d['troughTime']} ({d['troughValue']})"
+        )
+
 finally:
     combat.disconnect()
     ask_bot.disconnect()

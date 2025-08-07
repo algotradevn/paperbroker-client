@@ -93,3 +93,12 @@ class PaperBrokerClient:
 
     def get_executions_by_account(self):
         return self.account_client.get_executions_by_account()
+
+    def get_nav_history(self):
+        return self.account_client.get_nav_history()
+
+    def get_max_drawdown(self):
+        return self.account_client.get_max_drawdown()
+
+    def get_drawdown_periods(self):
+        return self.account_client.get_drawdown_periods()
