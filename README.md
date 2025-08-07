@@ -12,7 +12,7 @@ A Python client that **abstracts away FIX protocol complexity** when interacting
 1. Download the latest `.whl` file from [Releases](https://github.com/algotradevn/paperbroker-client/releases):
 
    ```
-   https://github.com/algotradevn/paperbroker-client/releases/download/v0.1.2/paperbroker_client-0.1.3-py3-none-any.whl
+   https://github.com/algotradevn/paperbroker-client/releases/download/v0.1.2/paperbroker_client-0.1.4-py3-none-any.whl
    ```
 
 2. Install dependencies:
@@ -24,7 +24,7 @@ A Python client that **abstracts away FIX protocol complexity** when interacting
 3. Install the `.whl` file:
 
    ```bash
-   pip install paperbroker_client-0.1.3-py3-none-any.whl
+   pip install paperbroker_client-0.1.4-py3-none-any.whl
    ```
 
 4. Create a FIX config file (e.g., `default.cfg`) with this template:
